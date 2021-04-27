@@ -1,0 +1,243 @@
+#include <iostream>
+#include <cmath>
+using namespace std;
+static double PI = 3.14;
+class Point {
+protected:
+	double x;
+	double y;
+public :
+	Point() { x = 0.0; y = 0.0; };
+	void Set(double _x, double _y) {
+		x = _x;
+		y = _y;
+	}
+	double GetX() const { return x; };
+	double GetY() const { return y; };
+	void print() const { cout << endl << "x = " << x << "  y = " << y << endl; };
+};
+class Shape {
+protected:
+	const char* color;
+public:
+	Shape(const char* _color) {  color = _color; };
+	//virtual ~Shape()=0;
+	virtual void draw() const = 0;
+	virtual double area() const = 0;
+	virtual double perimeter() const = 0;
+	void setColor(const char* _color) { color = _color; };
+	const char* getColor() const { return color; };
+};
+class Line :public Shape{
+protected:
+	Point start;
+	Point end;
+	const char* name;
+public :
+	Line(const char* _name, double x1, double y1, double x2, double y2, const char* _color/* = "red"*/) ;
+	//Shape::~Shape() { if (*color != NULL)delete[]color; }
+	virtual void draw()const;
+	virtual double perimeter()const;
+	virtual double area() const{ return 0; };
+	double length()const;
+	Point getStart()const ;
+	Point getEnd()const ;
+};
+Line::Line(const char* _name, double x1, double y1, double x2, double y2, const char* _color/* = "red"*/) :name(_name), Shape(_color) {
+	start.Set(x1, y1);
+	end.Set(x2, y2);
+}
+void Line::draw() const{
+	int height = (int)(start.GetX() - end.GetX());
+	int width = (int)(start.GetY() - end.GetY());
+	double k = height / width;//先算出直线斜率，知斜率正负之后可以确定线的走向即从左上角开始画还是左下角开始画
+	if (height < 0)height *= (-1);//得图像得高度。换正
+	if (height == 0)height = 1;//若x坐标之差为零，则图像高度为1
+	if (width < 0)width *= (-1);
+	if (width == 0)width = 1;
+	char** pic = new char*[height];
+	for (int i = 0; i < height; i++) {
+		pic[i] = new char[width];
+	}
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			pic[i][j] = ' ';
+		}
+	}
+	if (k > 0) {//从左下往右上画
+		for (int i = 0; i < height;i++) {                                          //行：从下往上     高4宽12
+			for (int j = i*(width / height); j < (i+1)*width/height; j++) {            //列：从左往右         ***
+				pic[i][j] = '*';                                                       //                 ***
+			}                                                                          //              ***
+		}                                                                              //           ***
+	}
+	else {      //从左上往右下画
+		for (int i = 0; i < height; i++) {                                             //行：从上往下 高4宽12
+			for (int j = i * (width / height); j < (i + 1) * width / height; j++) {    //列：从左往右***
+				pic[i][j] = '*';                                                       //			   ***
+			}                                                                          //                 ***
+		}                                                                              //                    ***
+	}
+	for (int i = height-1; i >= 0; i--) {
+		for (int j = 0; j < width; j++) {
+			cout << pic[i][j];
+		}
+		cout << endl;
+	}
+}
+double Line::perimeter() const{
+	return length();
+};
+ double  Line:: length() const{
+	double deltaX = start.GetX() + start.GetY();
+	double deltaY = end.GetX() + end.GetY();
+	return sqrt(deltaX * deltaX + deltaY * deltaY);
+}
+Point Line:: getStart()const { return start; };
+Point Line::getEnd()const { return end; };
+class Circle :public Shape {
+protected:
+	Point center;
+	double radius;
+	//const double PI;
+	const char* name;
+public:
+	friend class Line;
+	Circle(const char* _name, double x, double y, double _radius, const char* _color /* = "red"*/) ;
+	virtual void draw()const;
+	virtual double area() const;
+	virtual double perimeter() const;
+	//char circlePlot( int mdx, int mdy, int x, int y)const;
+};
+Circle::Circle(const char* _name, double x, double y, double _radius,const char *_color/* = "red"*/):name(_name), Shape(_color) {
+	center.Set(x,y);
+	radius = _radius;
+}
+void Circle::draw() const{
+	//由于一个任意的二维数组a[i][j]中i代表行，j代表某行第几个，
+	//所以 约定 这里的直角坐标系中x值为纵方向，y值为横方向
+	//  如 p[10][15]在坐标系中的表示：
+	//    10 11 12 13 14 15 16 y    
+	// 7/9_______________________>         
+	//  8|
+	//  9|
+	// 10|               P
+	// 11|
+	// 12|
+	//  x
+	Point test;//用于遍历坐标图每一个点的工具点
+	int height = (int)(2 * radius + 6);
+	int width = (int)(3 * radius + 6);
+	int** info = new int*[height];       //         
+	for (int i = 0; i < height; i++) {   // 定义动态二维数组的方法
+		info[i] = new int[width];        // 
+	}                                    //
+	char** pic = new char* [height];
+	for (int i = 0; i < height; i++) {
+		pic[i] = new char[width];	
+	}
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			pic[i][j] = '_';
+		}
+	}
+	Point midPoint;                                 //圆心
+	midPoint.Set((int)height / 2, (int)width / 2);
+	int dx, dy;
+	double d;
+	dy = 0;         //y是横坐标
+	dx = (int)radius;    //x是纵坐标
+	d = 3 - 2 * radius;
+		pic[(int)midPoint.GetX() + dx][(int)midPoint.GetY() + dy] = '*';
+		pic[(int)midPoint.GetX() - dx][(int)midPoint.GetY() + dy] = '*';
+		pic[(int)midPoint.GetX() + dx][(int)midPoint.GetY() - dy] = '*';
+		pic[(int)midPoint.GetX() - dx][(int)midPoint.GetY() - dy] = '*';
+		pic[(int)midPoint.GetX() + dy][(int)midPoint.GetY() + dx] = '*';
+		pic[(int)midPoint.GetX() - dy][(int)midPoint.GetY() + dx] = '*';
+		pic[(int)midPoint.GetX() + dy][(int)midPoint.GetY() - dx] = '*';
+		pic[(int)midPoint.GetX() - dy][(int)midPoint.GetY() - dx] = '*';
+	while (dy < dx) {
+		if (d < 0) {
+			d = d + 4.0 * dy + 6;
+		}
+		else {
+			d = d + 4.0 * (dx - dy) + 10;
+			dx--;
+		}
+		dy++;
+		pic[(int)midPoint.GetX() + dx][(int)midPoint.GetY() + dy] = '*';
+		pic[(int)midPoint.GetX() - dx][(int)midPoint.GetY() + dy] = '*';
+		pic[(int)midPoint.GetX() + dx][(int)midPoint.GetY() - dy] = '*';
+		pic[(int)midPoint.GetX() - dx][(int)midPoint.GetY() - dy] = '*';
+		pic[(int)midPoint.GetX() + dy][(int)midPoint.GetY() + dx] = '*';
+		pic[(int)midPoint.GetX() - dy][(int)midPoint.GetY() + dx] = '*';
+		pic[(int)midPoint.GetX() + dy][(int)midPoint.GetY() - dx] = '*';
+		pic[(int)midPoint.GetX() - dy][(int)midPoint.GetY() - dx] = '*';
+	}
+
+	for (int i = height-1; i >=0; i--) {      //输出圆形
+		for (int j = 0; j < width; j++) {
+			
+				cout << pic[i][j];
+			
+		}
+		cout << endl;
+	}
+}
+
+double Circle::perimeter() const{
+	return 2 * PI * radius;
+}
+double Circle::area()const {
+	return PI * radius * radius;
+}
+int main() {
+	bool exit = false;
+	for (;;) {
+		short choice;
+		cout <<endl<< "1.画直线" << endl;
+		cout << "2.画圆形" << endl;
+		cout << "0.退出" << endl;
+		cout << "请键入您的选择：";
+		cin >> choice;
+		switch (choice) {
+		case 1: {
+			//cout << "输入名称:";
+			char* name=(char*)"l1";
+			//cin >> *name;
+			cout << "输入起点坐标x1,y1:" << endl;
+			double x1, y1;
+			cin >> x1 >> y1;
+			cout << "输入终点坐标x2,y2:" << endl;
+			double x2, y2;
+			cin >> x2 >> y2;
+			Line l1(name, x1, y1, x2, y2,(char*)"red");
+			l1.draw();
+			cout << "该线段长"<<l1.length()<<" , 颜色 : "<<l1.getColor();
+			break;
+		}
+		case 2: {
+			//cout << "输入名称:";
+			char* name=(char*)"c1";
+			//cin >> *name;
+			cout << "输入圆心坐标：";
+			double x, y;
+			cin >> x >> y;
+			cout << "输入半径：";
+			double radius;
+			cin >> radius;
+			Circle c1(name, x, y,radius,(char*)"red");
+			c1.draw();
+			cout << "该圆的周长为" << c1.perimeter() << " , 面积为" << c1.area() << " , 颜色 : " << c1.getColor();
+			break;
+		}
+		case 0: {
+			exit = true;
+			break;
+		}
+		default:cout << "选项错误！"; break;
+		}
+		if (exit) break;
+	}
+	return 0;
+}
